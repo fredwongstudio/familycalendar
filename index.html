@@ -184,7 +184,7 @@
     background:var(--paper-card);
     border:1px solid var(--line);
     border-radius:10px;
-    padding:10px 12px;
+    padding:12px 14px;
     cursor:pointer;
     transition:box-shadow .12s ease;
     touch-action:manipulation;
@@ -192,15 +192,15 @@
   .day-row:active{ box-shadow:0 2px 8px rgba(43,58,66,0.12); }
   .day-row.today{ background:#FFFDF6; border:1.5px solid var(--clay); }
   .day-row-date{
-    flex:none; width:44px; text-align:center;
+    flex:none; width:50px; text-align:center;
     font-family:'JetBrains Mono', monospace;
   }
-  .day-row-date .dow{ font-size:0.62rem; font-weight:700; letter-spacing:.04em; color:var(--ink-soft); text-transform:uppercase; }
-  .day-row-date .num{ font-size:1.15rem; font-weight:700; color:var(--ink); line-height:1.2; }
+  .day-row-date .dow{ font-size:0.75rem; font-weight:700; letter-spacing:.04em; color:var(--ink-soft); text-transform:uppercase; }
+  .day-row-date .num{ font-size:1.4rem; font-weight:700; color:var(--ink); line-height:1.2; }
   .day-row.today .day-row-date .num{ color:var(--clay); }
-  .day-row-events{ flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
-  .day-row-events .event-pill{ display:inline-block; max-width:100%; }
-  .day-row-empty{ font-size:0.78rem; color:var(--ink-soft); font-style:italic; }
+  .day-row-events{ flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; }
+  .day-row-events .event-pill{ display:inline-block; max-width:100%; font-size:0.9rem; padding:5px 10px; border-radius:6px; }
+  .day-row-empty{ font-size:0.92rem; color:var(--ink-soft); font-style:italic; }
 
   @media (max-width:700px){
     .weekdays, .grid{ display:none; }
