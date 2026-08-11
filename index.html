@@ -298,7 +298,6 @@
       <button id="prevBtn">‹</button>
       <div class="month-label" id="monthLabel">—</div>
       <button id="nextBtn">›</button>
-      <button class="today-btn" id="todayBtn">Today</button>
     </div>
   </div>
 
@@ -661,7 +660,7 @@ document.getElementById('saveMemberBtn').onclick = async ()=>{
 // Nav
 document.getElementById('prevBtn').onclick = ()=>{ current.setMonth(current.getMonth()-1); renderCalendar(); };
 document.getElementById('nextBtn').onclick = ()=>{ current.setMonth(current.getMonth()+1); renderCalendar(); };
-document.getElementById('todayBtn').onclick = ()=>{ current = new Date(); renderCalendar(); };
+
 
 // close overlays on outside click
 [document.getElementById('dayOverlay'), document.getElementById('memberOverlay')].forEach(ov=>{
