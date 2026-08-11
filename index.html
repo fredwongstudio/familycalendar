@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Family Calendar</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
@@ -31,36 +32,38 @@
     font-family:'Figtree', sans-serif;
     -webkit-font-smoothing:antialiased;
   }
-  .app{ max-width:980px; margin:0 auto; padding:28px 20px 60px; }
+  .app{ max-width:980px; margin:0 auto; padding:clamp(16px,4vw,28px) clamp(12px,3.5vw,20px) 60px; }
 
   /* Header */
   .header{ display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:22px; flex-wrap:wrap; gap:14px;}
   .title-block h1{
     font-family:'Fraunces', serif;
     font-weight:600;
-    font-size:2.3rem;
+    font-size:clamp(1.5rem,5.2vw,2.3rem);
     margin:0 0 2px;
     letter-spacing:-0.01em;
   }
-  .title-block .sub{ color:var(--ink-soft); font-size:0.95rem; }
-  .nav{ display:flex; align-items:center; gap:10px; }
+  .title-block .sub{ color:var(--ink-soft); font-size:0.9rem; }
+  .nav{ display:flex; align-items:center; gap:8px; }
   .nav button{
     border:1.5px solid var(--ink);
     background:var(--paper-card);
     color:var(--ink);
-    width:34px; height:34px;
+    width:36px; height:36px;
     border-radius:50%;
     font-size:1rem;
     cursor:pointer;
     display:flex; align-items:center; justify-content:center;
     transition:transform .12s ease, background .12s ease;
+    flex:none;
+    touch-action:manipulation;
   }
   .nav button:hover{ background:var(--ink); color:var(--paper); transform:translateY(-1px); }
   .nav .month-label{
     font-family:'JetBrains Mono', monospace;
     font-weight:600;
-    font-size:1rem;
-    min-width:150px;
+    font-size:0.95rem;
+    min-width:132px;
     text-align:center;
   }
   .today-btn{
@@ -71,10 +74,18 @@
     background:transparent;
     color:var(--ink-soft);
     border-radius:8px;
-    padding:6px 12px;
+    padding:8px 12px;
     cursor:pointer;
+    flex:none;
+    touch-action:manipulation;
   }
   .today-btn:hover{ border-color:var(--ink); color:var(--ink); }
+
+  @media (max-width:700px){
+    .header{ flex-direction:column; align-items:stretch; gap:12px; }
+    .nav{ justify-content:space-between; width:100%; }
+    .nav .month-label{ flex:1; min-width:0; }
+  }
 
   /* Family strip */
   .family-strip{
@@ -109,23 +120,26 @@
   .add-member:hover{ border-color:var(--ink); color:var(--ink); }
 
   /* Calendar grid */
-  .weekdays{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:6px; }
+  .weekdays{ display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,1vw,6px); margin-bottom:6px; }
   .weekdays div{
-    text-align:center; font-size:0.72rem; font-weight:700; letter-spacing:.08em;
+    text-align:center; font-size:clamp(0.6rem,1.8vw,0.72rem); font-weight:700; letter-spacing:.06em;
     color:var(--ink-soft); text-transform:uppercase;
     font-family:'JetBrains Mono', monospace;
+    white-space:nowrap; overflow:hidden;
   }
-  .grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .weekdays .short{ display:none; }
+  .grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,1vw,6px); }
   .day{
     background:var(--paper-card);
     border:1px solid var(--line);
     border-radius:10px;
-    min-height:96px;
-    padding:6px 6px 8px;
+    min-height:clamp(56px,13vw,96px);
+    padding:clamp(3px,1vw,6px) clamp(3px,1vw,6px) clamp(4px,1vw,8px);
     position:relative;
     cursor:pointer;
     transition:box-shadow .12s ease, transform .12s ease;
     display:flex; flex-direction:column;
+    touch-action:manipulation;
   }
   .day:hover{ box-shadow:0 3px 10px rgba(43,58,66,0.12); transform:translateY(-1px); }
   .day.other-month{ opacity:0.35; }
@@ -140,23 +154,28 @@
   .day-num{
     font-family:'JetBrains Mono', monospace;
     font-weight:600;
-    font-size:0.85rem;
+    font-size:clamp(0.7rem,2vw,0.85rem);
     color:var(--ink-soft);
     margin-bottom:4px;
   }
   .day.today .day-num{ color:var(--clay); font-weight:700; }
   .events{ display:flex; flex-direction:column; gap:3px; overflow:hidden; }
   .event-pill{
-    font-size:0.68rem;
+    font-size:clamp(0.55rem,1.6vw,0.68rem);
     font-weight:600;
-    padding:2px 6px;
+    padding:2px clamp(3px,1vw,6px);
     border-radius:5px;
     color:#fff;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
   }
-  .more-pill{ font-size:0.65rem; color:var(--ink-soft); font-weight:600; padding-left:2px; }
+  .more-pill{ font-size:clamp(0.55rem,1.5vw,0.65rem); color:var(--ink-soft); font-weight:600; padding-left:2px; }
+
+  @media (max-width:480px){
+    .weekdays .full{ display:none; }
+    .weekdays .short{ display:inline; }
+  }
 
   /* Modal */
   .overlay{
@@ -172,6 +191,24 @@
     box-shadow:0 20px 50px rgba(43,58,66,0.25);
     max-height:86vh; overflow-y:auto;
   }
+
+  @media (max-width:700px){
+    .overlay{ align-items:flex-end; padding:0; }
+    .modal{
+      max-width:100%;
+      border-radius:20px 20px 0 0;
+      max-height:92vh;
+      padding:20px 18px calc(18px + env(safe-area-inset-bottom));
+      animation:sheet-up .22s ease-out;
+    }
+    @keyframes sheet-up{
+      from{ transform:translateY(16px); opacity:0.6; }
+      to{ transform:translateY(0); opacity:1; }
+    }
+    .field input[type=text], .field input[type=time], .field select, .field textarea{
+      font-size:16px; /* prevents iOS auto-zoom on focus */
+    }
+  }
   .modal h2{
     font-family:'Fraunces', serif; font-weight:600; margin:0 0 14px; font-size:1.3rem;
   }
@@ -186,7 +223,7 @@
   .swatch{ width:26px; height:26px; border-radius:50%; cursor:pointer; border:2px solid transparent; }
   .swatch.selected{ border-color:var(--ink); }
   .modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
-  .btn{ padding:9px 16px; border-radius:8px; font-weight:600; font-size:0.88rem; cursor:pointer; border:1.5px solid transparent; }
+  .btn{ padding:10px 16px; border-radius:8px; font-weight:600; font-size:0.88rem; cursor:pointer; border:1.5px solid transparent; min-height:40px; touch-action:manipulation; }
   .btn-primary{ background:var(--ink); color:var(--paper); }
   .btn-primary:hover{ background:#1b2529; }
   .btn-ghost{ background:transparent; color:var(--ink-soft); border-color:var(--line); }
@@ -209,10 +246,11 @@
   .empty-note{ font-size:0.8rem; color:var(--ink-soft); font-style:italic; margin-bottom:10px; }
   .loading{ text-align:center; padding:40px; color:var(--ink-soft); font-family:'JetBrains Mono',monospace; }
 
-  @media (max-width:600px){
-    .day{ min-height:72px; padding:4px; }
-    .event-pill{ font-size:0.6rem; }
-    .title-block h1{ font-size:1.7rem; }
+  @media (max-width:700px){
+    .family-strip{ padding:10px 12px; gap:8px; }
+    .member-chip{ padding:6px 10px 6px 5px; }
+    .add-member{ padding:8px 12px; }
+    .remove-member{ padding:4px; margin:-4px; }
   }
 </style>
 <!-- Firebase (Realtime Database) -->
@@ -237,7 +275,13 @@
   <div class="family-strip" id="familyStrip"></div>
 
   <div class="weekdays">
-    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+    <div><span class="full">Sun</span><span class="short">S</span></div>
+    <div><span class="full">Mon</span><span class="short">M</span></div>
+    <div><span class="full">Tue</span><span class="short">T</span></div>
+    <div><span class="full">Wed</span><span class="short">W</span></div>
+    <div><span class="full">Thu</span><span class="short">T</span></div>
+    <div><span class="full">Fri</span><span class="short">F</span></div>
+    <div><span class="full">Sat</span><span class="short">S</span></div>
   </div>
   <div class="grid" id="grid">
     <div class="loading">Loading calendar…</div>
