@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Family Calendar</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
+
+  :root{
+    --paper:#EEF1E9;
+    --paper-card:#F8F9F4;
+    --ink:#2B3A42;
+    --ink-soft:#5B6B6F;
+    --line:#D8DECE;
+    --clay:#C1694F;
+    --ochre:#D6A339;
+    --teal:#4C7C73;
+    --plum:#8B5D7B;
+    --sky:#4C7A9B;
+    --moss:#6E8B4A;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(43,58,66,0.06) 1px, transparent 0);
+    background-size:22px 22px;
+    color:var(--ink);
+    font-family:'Figtree', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{ max-width:980px; margin:0 auto; padding:28px 20px 60px; }
+
+  /* Header */
+  .header{ display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:22px; flex-wrap:wrap; gap:14px;}
+  .title-block h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:2.3rem;
+    margin:0 0 2px;
+    letter-spacing:-0.01em;
+  }
+  .title-block .sub{ color:var(--ink-soft); font-size:0.95rem; }
+  .nav{ display:flex; align-items:center; gap:10px; }
+  .nav button{
+    border:1.5px solid var(--ink);
+    background:var(--paper-card);
+    color:var(--ink);
+    width:34px; height:34px;
+    border-radius:50%;
+    font-size:1rem;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .12s ease, background .12s ease;
+  }
+  .nav button:hover{ background:var(--ink); color:var(--paper); transform:translateY(-1px); }
+  .nav .month-label{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:600;
+    font-size:1rem;
+    min-width:150px;
+    text-align:center;
+  }
+  .today-btn{
+    font-family:'Figtree', sans-serif;
+    font-size:0.85rem;
+    font-weight:600;
+    border:1.5px solid var(--line);
+    background:transparent;
+    color:var(--ink-soft);
+    border-radius:8px;
+    padding:6px 12px;
+    cursor:pointer;
+  }
+  .today-btn:hover{ border-color:var(--ink); color:var(--ink); }
+
+  /* Family strip */
+  .family-strip{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    margin-bottom:18px;
+    padding:12px 14px;
+    background:var(--paper-card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+  }
+  .member-chip{
+    display:flex; align-items:center; gap:6px;
+    font-size:0.85rem; font-weight:600;
+    padding:5px 10px 5px 5px;
+    border-radius:999px;
+    background:rgba(43,58,66,0.04);
+  }
+  .dot{ width:18px; height:18px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.65rem; font-weight:700; font-family:'JetBrains Mono',monospace;}
+  .remove-member{ cursor:pointer; color:var(--ink-soft); font-weight:700; padding-left:2px; }
+  .remove-member:hover{ color:var(--clay); }
+  .add-member{
+    display:flex; align-items:center; gap:6px;
+    border:1.5px dashed var(--line);
+    border-radius:999px;
+    padding:5px 12px;
+    background:transparent;
+    color:var(--ink-soft);
+    font-size:0.85rem;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .add-member:hover{ border-color:var(--ink); color:var(--ink); }
+
+  /* Calendar grid */
+  .weekdays{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:6px; }
+  .weekdays div{
+    text-align:center; font-size:0.72rem; font-weight:700; letter-spacing:.08em;
+    color:var(--ink-soft); text-transform:uppercase;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .day{
+    background:var(--paper-card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    min-height:96px;
+    padding:6px 6px 8px;
+    position:relative;
+    cursor:pointer;
+    transition:box-shadow .12s ease, transform .12s ease;
+    display:flex; flex-direction:column;
+  }
+  .day:hover{ box-shadow:0 3px 10px rgba(43,58,66,0.12); transform:translateY(-1px); }
+  .day.other-month{ opacity:0.35; }
+  .day.today{ background:#FFFDF6; border:1.5px solid var(--clay); }
+  .day.today::before{
+    content:"";
+    position:absolute; top:-7px; left:50%; transform:translateX(-50%);
+    width:11px; height:11px; border-radius:50%;
+    background:var(--clay);
+    box-shadow:0 1px 2px rgba(0,0,0,0.25);
+  }
+  .day-num{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:600;
+    font-size:0.85rem;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+  .day.today .day-num{ color:var(--clay); font-weight:700; }
+  .events{ display:flex; flex-direction:column; gap:3px; overflow:hidden; }
+  .event-pill{
+    font-size:0.68rem;
+    font-weight:600;
+    padding:2px 6px;
+    border-radius:5px;
+    color:#fff;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .more-pill{ font-size:0.65rem; color:var(--ink-soft); font-weight:600; padding-left:2px; }
+
+  /* Modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(43,58,66,0.35);
+    display:none; align-items:center; justify-content:center; padding:20px; z-index:50;
+  }
+  .overlay.open{ display:flex; }
+  .modal{
+    background:var(--paper-card);
+    border-radius:16px;
+    width:100%; max-width:420px;
+    padding:22px;
+    box-shadow:0 20px 50px rgba(43,58,66,0.25);
+    max-height:86vh; overflow-y:auto;
+  }
+  .modal h2{
+    font-family:'Fraunces', serif; font-weight:600; margin:0 0 14px; font-size:1.3rem;
+  }
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-size:0.78rem; font-weight:700; color:var(--ink-soft); margin-bottom:4px; text-transform:uppercase; letter-spacing:.04em; }
+  .field input[type=text], .field input[type=time], .field select, .field textarea{
+    width:100%; padding:9px 10px; border-radius:8px; border:1.5px solid var(--line);
+    font-family:'Figtree', sans-serif; font-size:0.92rem; background:#fff; color:var(--ink);
+  }
+  .field textarea{ resize:vertical; min-height:50px; }
+  .swatches{ display:flex; gap:8px; flex-wrap:wrap; }
+  .swatch{ width:26px; height:26px; border-radius:50%; cursor:pointer; border:2px solid transparent; }
+  .swatch.selected{ border-color:var(--ink); }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+  .btn{ padding:9px 16px; border-radius:8px; font-weight:600; font-size:0.88rem; cursor:pointer; border:1.5px solid transparent; }
+  .btn-primary{ background:var(--ink); color:var(--paper); }
+  .btn-primary:hover{ background:#1b2529; }
+  .btn-ghost{ background:transparent; color:var(--ink-soft); border-color:var(--line); }
+  .btn-ghost:hover{ border-color:var(--ink); color:var(--ink); }
+  .btn-danger{ background:transparent; color:var(--clay); border-color:transparent; margin-right:auto; font-weight:600; }
+  .btn-danger:hover{ text-decoration:underline; }
+
+  .existing-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .existing-item{
+    display:flex; align-items:center; gap:8px;
+    padding:8px 10px; border-radius:8px; background:#fff; border:1px solid var(--line);
+  }
+  .existing-item .who{ width:10px; height:10px; border-radius:50%; flex:none; }
+  .existing-item .info{ flex:1; min-width:0; }
+  .existing-item .info .t{ font-weight:600; font-size:0.88rem; }
+  .existing-item .info .m{ font-size:0.75rem; color:var(--ink-soft); }
+  .existing-item .del{ cursor:pointer; color:var(--ink-soft); font-size:0.8rem; font-weight:700; }
+  .existing-item .del:hover{ color:var(--clay); }
+
+  .empty-note{ font-size:0.8rem; color:var(--ink-soft); font-style:italic; margin-bottom:10px; }
+  .loading{ text-align:center; padding:40px; color:var(--ink-soft); font-family:'JetBrains Mono',monospace; }
+
+  @media (max-width:600px){
+    .day{ min-height:72px; padding:4px; }
+    .event-pill{ font-size:0.6rem; }
+    .title-block h1{ font-size:1.7rem; }
+  }
+</style>
+<!-- Firebase (Realtime Database) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="title-block">
+      <h1>Family Calendar</h1>
+      <div class="sub">Tap a day to add or view activities</div>
+    </div>
+    <div class="nav">
+      <button id="prevBtn">‹</button>
+      <div class="month-label" id="monthLabel">—</div>
+      <button id="nextBtn">›</button>
+      <button class="today-btn" id="todayBtn">Today</button>
+    </div>
+  </div>
+
+  <div class="family-strip" id="familyStrip"></div>
+
+  <div class="weekdays">
+    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+  </div>
+  <div class="grid" id="grid">
+    <div class="loading">Loading calendar…</div>
+  </div>
+</div>
+
+<!-- Day modal -->
+<div class="overlay" id="dayOverlay">
+  <div class="modal">
+    <h2 id="dayModalTitle">Activities</h2>
+    <div id="existingList" class="existing-list"></div>
+    <div id="emptyNote" class="empty-note" style="display:none;">No activities yet for this day.</div>
+
+    <div class="field">
+      <label>What's happening</label>
+      <input type="text" id="evTitle" placeholder="e.g. Soccer practice">
+    </div>
+    <div class="field">
+      <label>Time (optional)</label>
+      <input type="time" id="evTime">
+    </div>
+    <div class="field">
+      <label>Who</label>
+      <select id="evMember"></select>
+    </div>
+    <div class="field">
+      <label>Notes (optional)</label>
+      <textarea id="evNotes" placeholder="Location, reminders, anything else"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="closeDayModal">Close</button>
+      <button class="btn btn-primary" id="addEventBtn">Add activity</button>
+    </div>
+  </div>
+</div>
+
+<!-- Member modal -->
+<div class="overlay" id="memberOverlay">
+  <div class="modal">
+    <h2>Add family member</h2>
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="memberName" placeholder="e.g. Mom, Dad, Sam">
+    </div>
+    <div class="field">
+      <label>Color</label>
+      <div class="swatches" id="colorSwatches"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="closeMemberModal">Cancel</button>
+      <button class="btn btn-primary" id="saveMemberBtn">Add member</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS = ['#C1694F','#D6A339','#4C7C73','#8B5D7B','#4C7A9B','#6E8B4A'];
+
+// ---- Firebase setup ----
+// Fill these in with the values from your Firebase project's
+// Project Settings > General > "Your apps" > SDK setup and configuration.
+const firebaseConfig = {
+  apiKey: "AIzaSyBwzhRPR1ctAVW7fs5M1ezo1Fb78sr4H0A",
+  authDomain: "family-calendar-17431.firebaseapp.com",
+  databaseURL: "https://family-calendar-17431-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "family-calendar-17431",
+  storageBucket: "family-calendar-17431.firebasestorage.app",
+  messagingSenderId: "1004404038478",
+  appId: "1:1004404038478:web:81e833fc38aea7242bdc1f"
+};
+firebase.initializeApp(firebaseConfig);
+const dataRef = firebase.database().ref('family-calendar-data');
+// ---- end Firebase setup ----
+
+let data = { members: [], events: {} }; // events: { "YYYY-MM-DD": [ {id,title,time,notes,memberId} ] }
+let current = new Date();
+let selectedDateKey = null;
+let selectedColor = COLORS[0];
+let saving = false;
+
+function dateKey(d){
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function isSameDay(a,b){
+  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+}
+function uid(){ return Math.random().toString(36).slice(2,10); }
+
+function showStatus(msg, isError, autoHide){
+  let bar = document.getElementById('statusBar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'statusBar';
+    bar.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:100;text-align:center;padding:9px 14px;font-family:Figtree,sans-serif;font-size:0.85rem;font-weight:600;transition:opacity .2s ease;';
+    document.body.prepend(bar);
+  }
+  bar.textContent = msg;
+  bar.style.background = isError ? '#C1694F' : '#4C7C73';
+  bar.style.color = '#fff';
+  bar.style.opacity = '1';
+  bar.style.display = 'block';
+  if(autoHide){
+    clearTimeout(bar._t);
+    bar._t = setTimeout(()=>{ bar.style.opacity='0'; setTimeout(()=>bar.style.display='none',200); }, autoHide);
+  }
+}
+
+// Live-syncs across every open copy of the calendar (any family member,
+// any device) whenever the data changes in Firebase.
+function attachRealtimeListener(){
+  dataRef.on('value', (snapshot)=>{
+    const val = snapshot.val();
+    data = val ? val : { members: [], events: {} };
+    if(!data.members) data.members = [];
+    if(!data.events) data.events = {};
+    renderFamilyStrip();
+    renderCalendar();
+    if(document.getElementById('dayOverlay').classList.contains('open') && selectedDateKey){
+      renderExistingEvents();
+    }
+  }, (error)=>{
+    console.error('Could not connect to the shared calendar', error);
+    showStatus('Couldn\'t connect to the shared calendar — check your internet connection.', true, 0);
+  });
+}
+
+async function persist(){
+  try{
+    await dataRef.set(data);
+    showStatus('Saved', false, 1200);
+  }catch(e){
+    console.error('Could not save calendar data', e);
+    showStatus('Couldn\'t save that change — check your connection and try again.', true, 5000);
+    throw e;
+  }
+}
+
+function renderFamilyStrip(){
+  const strip = document.getElementById('familyStrip');
+  strip.innerHTML = '';
+  data.members.forEach(m => {
+    const chip = document.createElement('div');
+    chip.className = 'member-chip';
+    chip.innerHTML = `<span class="dot" style="background:${m.color}">${m.name.charAt(0).toUpperCase()}</span>
+      <span>${escapeHtml(m.name)}</span>
+      <span class="remove-member" data-id="${m.id}" title="Remove">×</span>`;
+    strip.appendChild(chip);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-member';
+  addBtn.innerHTML = '+ Add family member';
+  addBtn.onclick = openMemberModal;
+  strip.appendChild(addBtn);
+
+  strip.querySelectorAll('.remove-member').forEach(el=>{
+    el.onclick = async (e)=>{
+      const id = e.target.getAttribute('data-id');
+      if(!confirm('Remove this family member? Their activities will remain but show as unassigned.')) return;
+      data.members = data.members.filter(m=>m.id!==id);
+      try{ await persist(); } catch(e){}
+      renderFamilyStrip();
+      renderCalendar();
+    };
+  });
+}
+
+function renderCalendar(){
+  const y = current.getFullYear();
+  const m = current.getMonth();
+  document.getElementById('monthLabel').textContent =
+    current.toLocaleDateString('en-US',{month:'long', year:'numeric'});
+
+  const firstOfMonth = new Date(y,m,1);
+  const startDow = firstOfMonth.getDay();
+  const gridStart = new Date(y,m,1-startDow);
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  const today = new Date();
+
+  for(let i=0;i<42;i++){
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate()+i);
+    const key = dateKey(d);
+    const cell = document.createElement('div');
+    cell.className = 'day' + (d.getMonth()!==m ? ' other-month':'') + (isSameDay(d,today) ? ' today':'');
+    cell.innerHTML = `<div class="day-num">${d.getDate()}</div><div class="events"></div>`;
+    cell.onclick = ()=> openDayModal(key, d);
+
+    const evWrap = cell.querySelector('.events');
+    const dayEvents = (data.events[key]||[]).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+    const shown = dayEvents.slice(0,3);
+    shown.forEach(ev=>{
+      const member = data.members.find(mm=>mm.id===ev.memberId);
+      const pill = document.createElement('div');
+      pill.className = 'event-pill';
+      pill.style.background = member ? member.color : '#8a8a8a';
+      pill.textContent = (ev.time ? ev.time+' ' : '') + ev.title;
+      evWrap.appendChild(pill);
+    });
+    if(dayEvents.length>3){
+      const more = document.createElement('div');
+      more.className = 'more-pill';
+      more.textContent = `+${dayEvents.length-3} more`;
+      evWrap.appendChild(more);
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// Day modal
+function openDayModal(key, dateObj){
+  selectedDateKey = key;
+  document.getElementById('dayModalTitle').textContent =
+    dateObj.toLocaleDateString('en-US',{weekday:'long', month:'long', day:'numeric'});
+
+  const memberSelect = document.getElementById('evMember');
+  memberSelect.innerHTML = data.members.length
+    ? data.members.map(m=>`<option value="${m.id}">${escapeHtml(m.name)}</option>`).join('')
+    : `<option value="">Add a family member first</option>`;
+
+  renderExistingEvents();
+  document.getElementById('evTitle').value='';
+  document.getElementById('evTime').value='';
+  document.getElementById('evNotes').value='';
+  document.getElementById('dayOverlay').classList.add('open');
+}
+
+function renderExistingEvents(){
+  const list = document.getElementById('existingList');
+  const empty = document.getElementById('emptyNote');
+  const events = (data.events[selectedDateKey]||[]).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+  list.innerHTML='';
+  empty.style.display = events.length ? 'none':'block';
+  events.forEach(ev=>{
+    const member = data.members.find(m=>m.id===ev.memberId);
+    const row = document.createElement('div');
+    row.className='existing-item';
+    row.innerHTML = `<span class="who" style="background:${member?member.color:'#999'}"></span>
+      <div class="info">
+        <div class="t">${ev.time? escapeHtml(ev.time)+' — ':''}${escapeHtml(ev.title)}</div>
+        <div class="m">${member?escapeHtml(member.name):'Unassigned'}${ev.notes? ' · '+escapeHtml(ev.notes):''}</div>
+      </div>
+      <span class="del" data-id="${ev.id}">Remove</span>`;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('.del').forEach(el=>{
+    el.onclick = async (e)=>{
+      const id = e.target.getAttribute('data-id');
+      data.events[selectedDateKey] = (data.events[selectedDateKey]||[]).filter(ev=>ev.id!==id);
+      try{ await persist(); } catch(e){}
+      renderExistingEvents();
+      renderCalendar();
+    };
+  });
+}
+
+document.getElementById('addEventBtn').onclick = async ()=>{
+  const title = document.getElementById('evTitle').value.trim();
+  if(!title){ alert('Give the activity a name.'); return; }
+  const time = document.getElementById('evTime').value;
+  const memberId = document.getElementById('evMember').value;
+  const notes = document.getElementById('evNotes').value.trim();
+
+  if(!data.events[selectedDateKey]) data.events[selectedDateKey]=[];
+  data.events[selectedDateKey].push({ id: uid(), title, time, memberId, notes });
+  try{ await persist(); } catch(e){}
+
+  document.getElementById('evTitle').value='';
+  document.getElementById('evTime').value='';
+  document.getElementById('evNotes').value='';
+  renderExistingEvents();
+  renderCalendar();
+};
+
+document.getElementById('closeDayModal').onclick = ()=>{
+  document.getElementById('dayOverlay').classList.remove('open');
+};
+
+// Member modal
+function openMemberModal(){
+  document.getElementById('memberName').value='';
+  selectedColor = COLORS[data.members.length % COLORS.length];
+  const sw = document.getElementById('colorSwatches');
+  sw.innerHTML = COLORS.map(c=>`<div class="swatch${c===selectedColor?' selected':''}" data-color="${c}" style="background:${c}"></div>`).join('');
+  sw.querySelectorAll('.swatch').forEach(el=>{
+    el.onclick = ()=>{
+      selectedColor = el.getAttribute('data-color');
+      sw.querySelectorAll('.swatch').forEach(s=>s.classList.remove('selected'));
+      el.classList.add('selected');
+    };
+  });
+  document.getElementById('memberOverlay').classList.add('open');
+}
+document.getElementById('closeMemberModal').onclick = ()=>{
+  document.getElementById('memberOverlay').classList.remove('open');
+};
+document.getElementById('saveMemberBtn').onclick = async ()=>{
+  const name = document.getElementById('memberName').value.trim();
+  if(!name){ alert('Give this family member a name.'); return; }
+  data.members.push({ id: uid(), name, color: selectedColor });
+  try{ await persist(); } catch(e){}
+  renderFamilyStrip();
+  renderCalendar();
+  document.getElementById('memberOverlay').classList.remove('open');
+};
+
+// Nav
+document.getElementById('prevBtn').onclick = ()=>{ current.setMonth(current.getMonth()-1); renderCalendar(); };
+document.getElementById('nextBtn').onclick = ()=>{ current.setMonth(current.getMonth()+1); renderCalendar(); };
+document.getElementById('todayBtn').onclick = ()=>{ current = new Date(); renderCalendar(); };
+
+// close overlays on outside click
+[document.getElementById('dayOverlay'), document.getElementById('memberOverlay')].forEach(ov=>{
+  ov.addEventListener('click', (e)=>{ if(e.target===ov) ov.classList.remove('open'); });
+});
+
+attachRealtimeListener();
+</script>
+</body>
+</html>
