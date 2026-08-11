@@ -249,6 +249,8 @@
     font-family:'Figtree', sans-serif; font-size:0.92rem; background:#fff; color:var(--ink);
   }
   .field textarea{ resize:vertical; min-height:50px; }
+  .time-select-row{ display:flex; gap:8px; }
+  .time-select-row select{ flex:1; min-width:0; }
   .swatches{ display:flex; gap:8px; flex-wrap:wrap; }
   .swatch{ width:26px; height:26px; border-radius:50%; cursor:pointer; border:2px solid transparent; }
   .swatch.selected{ border-color:var(--ink); }
@@ -331,7 +333,25 @@
     </div>
     <div class="field">
       <label>Time (optional)</label>
-      <input type="time" id="evTime">
+      <div class="time-select-row">
+        <select id="evHour" aria-label="Hour">
+          <option value="">--</option>
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+          <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+          <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+        </select>
+        <select id="evMinute" aria-label="Minute">
+          <option value="00">00</option><option value="05">05</option><option value="10">10</option>
+          <option value="15">15</option><option value="20">20</option><option value="25">25</option>
+          <option value="30">30</option><option value="35">35</option><option value="40">40</option>
+          <option value="45">45</option><option value="50">50</option><option value="55">55</option>
+        </select>
+        <select id="evAmPm" aria-label="AM or PM">
+          <option value="AM">AM</option>
+          <option value="PM">PM</option>
+        </select>
+      </div>
     </div>
     <div class="field">
       <label>Who</label>
@@ -514,7 +534,7 @@ function renderCalendar(){
       const pill = document.createElement('div');
       pill.className = 'event-pill';
       pill.style.background = member ? member.color : '#8a8a8a';
-      pill.textContent = (ev.time ? ev.time+' ' : '') + ev.title;
+      pill.textContent = (ev.time ? formatTime12(ev.time)+' ' : '') + ev.title;
       evWrap.appendChild(pill);
     });
     if(dayEvents.length>3){
@@ -540,7 +560,7 @@ function renderCalendar(){
           const pill = document.createElement('div');
           pill.className = 'event-pill';
           pill.style.background = member ? member.color : '#8a8a8a';
-          pill.textContent = (ev.time ? ev.time+' ' : '') + ev.title;
+          pill.textContent = (ev.time ? formatTime12(ev.time)+' ' : '') + ev.title;
           rowEvWrap.appendChild(pill);
         });
       } else {
@@ -560,6 +580,15 @@ function escapeHtml(s){
   return d.innerHTML;
 }
 
+function formatTime12(time24){
+  if(!time24) return '';
+  const [hStr, mStr] = time24.split(':');
+  let h = parseInt(hStr,10);
+  const ampm = h>=12 ? 'PM' : 'AM';
+  h = h % 12; if(h===0) h = 12;
+  return `${h}:${mStr} ${ampm}`;
+}
+
 // Day modal
 function openDayModal(key, dateObj){
   selectedDateKey = key;
@@ -573,7 +602,9 @@ function openDayModal(key, dateObj){
 
   renderExistingEvents();
   document.getElementById('evTitle').value='';
-  document.getElementById('evTime').value='';
+  document.getElementById('evHour').value='';
+  document.getElementById('evMinute').value='00';
+  document.getElementById('evAmPm').value='AM';
   document.getElementById('evNotes').value='';
   document.getElementById('dayOverlay').classList.add('open');
 }
@@ -590,7 +621,7 @@ function renderExistingEvents(){
     row.className='existing-item';
     row.innerHTML = `<span class="who" style="background:${member?member.color:'#999'}"></span>
       <div class="info">
-        <div class="t">${ev.time? escapeHtml(ev.time)+' — ':''}${escapeHtml(ev.title)}</div>
+        <div class="t">${ev.time? escapeHtml(formatTime12(ev.time))+' — ':''}${escapeHtml(ev.title)}</div>
         <div class="m">${member?escapeHtml(member.name):'Unassigned'}${ev.notes? ' · '+escapeHtml(ev.notes):''}</div>
       </div>
       <span class="del" data-id="${ev.id}">Remove</span>`;
@@ -610,7 +641,15 @@ function renderExistingEvents(){
 document.getElementById('addEventBtn').onclick = async ()=>{
   const title = document.getElementById('evTitle').value.trim();
   if(!title){ alert('Give the activity a name.'); return; }
-  const time = document.getElementById('evTime').value;
+  const hour12 = document.getElementById('evHour').value;
+  const minute = document.getElementById('evMinute').value;
+  const ampm = document.getElementById('evAmPm').value;
+  let time = '';
+  if(hour12){
+    let h = parseInt(hour12,10) % 12;
+    if(ampm==='PM') h += 12;
+    time = String(h).padStart(2,'0') + ':' + minute;
+  }
   const memberId = document.getElementById('evMember').value;
   const notes = document.getElementById('evNotes').value.trim();
 
@@ -619,7 +658,9 @@ document.getElementById('addEventBtn').onclick = async ()=>{
   try{ await persist(); } catch(e){}
 
   document.getElementById('evTitle').value='';
-  document.getElementById('evTime').value='';
+  document.getElementById('evHour').value='';
+  document.getElementById('evMinute').value='00';
+  document.getElementById('evAmPm').value='AM';
   document.getElementById('evNotes').value='';
   renderExistingEvents();
   renderCalendar();
