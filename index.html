@@ -19,6 +19,10 @@
     --plum:#8B5D7B;
     --sky:#4C7A9B;
     --moss:#6E8B4A;
+    --ph:#A83232;
+    --ph-tint:rgba(168,50,50,0.09);
+    --sch:#5FA37E;
+    --sch-tint:rgba(95,163,126,0.035);
     --radius:14px;
   }
   *{box-sizing:border-box;}
@@ -119,6 +123,15 @@
   }
   .add-member:hover{ border-color:var(--ink); color:var(--ink); }
 
+  /* Holiday legend */
+  .holiday-legend{
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    margin:-10px 0 18px 2px;
+    font-size:0.78rem; font-weight:600; color:var(--ink-soft);
+  }
+  .holiday-legend .swatch-item{ display:flex; align-items:center; gap:6px; }
+  .holiday-legend .swatch-item .sw{ width:10px; height:10px; border-radius:3px; flex:none; }
+
   /* Calendar grid */
   .weekdays{ display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,1vw,6px); margin-bottom:6px; }
   .weekdays div{
@@ -159,6 +172,18 @@
     margin-bottom:4px;
   }
   .day.today .day-num{ color:var(--clay); font-weight:700; }
+  .day.school-holiday{ background:var(--sch-tint); }
+  .day.public-holiday{ border-top:3px solid var(--ph); }
+  .day.public-holiday.school-holiday{ background:var(--sch-tint); }
+  .holiday-label{
+    font-size:clamp(0.5rem,1.4vw,0.6rem);
+    font-weight:700;
+    line-height:1.2;
+    margin-bottom:3px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .holiday-label.ph{ color:var(--ph); }
+  .holiday-label.sch{ color:var(--sch); }
   .events{ display:flex; flex-direction:column; gap:3px; overflow:hidden; }
   .event-pill{
     font-size:clamp(0.55rem,1.6vw,0.68rem);
@@ -191,6 +216,8 @@
   }
   .day-row:active{ box-shadow:0 2px 8px rgba(43,58,66,0.12); }
   .day-row.today{ background:#FFFDF6; border:1.5px solid var(--clay); }
+  .day-row.school-holiday{ background:var(--sch-tint); }
+  .day-row.public-holiday{ border-left:4px solid var(--ph); }
   .day-row-date{
     flex:none; width:50px; text-align:center;
     font-family:'JetBrains Mono', monospace;
@@ -199,6 +226,7 @@
   .day-row-date .num{ font-size:1.4rem; font-weight:700; color:var(--ink); line-height:1.2; }
   .day-row.today .day-row-date .num{ color:var(--clay); }
   .day-row-events{ flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; }
+  .day-row-events .holiday-label{ font-size:0.78rem; margin-bottom:0; white-space:normal; }
   .day-row-events .event-pill{ display:inline-block; max-width:100%; font-size:0.9rem; padding:5px 10px; border-radius:6px; }
   .day-row-empty{ font-size:0.92rem; color:var(--ink-soft); font-style:italic; }
 
@@ -314,6 +342,11 @@
 
   <div class="family-strip" id="familyStrip"></div>
 
+  <div class="holiday-legend">
+    <div class="swatch-item"><span class="sw" style="background:var(--ph)"></span>Public holiday</div>
+    <div class="swatch-item"><span class="sw" style="background:var(--sch)"></span>Primary school holiday</div>
+  </div>
+
   <div class="weekdays">
     <div><span class="full">Sun</span><span class="short">S</span></div>
     <div><span class="full">Mon</span><span class="short">M</span></div>
@@ -420,6 +453,49 @@ const dataRef = firebase.database().ref('family-calendar-data');
 // ---- end Firebase setup ----
 
 let data = { members: [], events: {} }; // events: { "YYYY-MM-DD": [ {id,title,time,notes,memberId} ] }
+
+// ---- Singapore public holidays & MOE primary school holidays ----
+// Source: MOM (public holidays) and MOE (school terms/holidays) official 2026 releases.
+// Add future years to these tables as they're announced.
+const PUBLIC_HOLIDAYS = {
+  '2026-01-01': "New Year's Day",
+  '2026-02-17': "Chinese New Year",
+  '2026-02-18': "Chinese New Year",
+  '2026-03-21': "Hari Raya Puasa",
+  '2026-04-03': "Good Friday",
+  '2026-05-01': "Labour Day",
+  '2026-05-27': "Hari Raya Haji",
+  '2026-05-31': "Vesak Day",
+  '2026-06-01': "Vesak Day (observed)",
+  '2026-08-09': "National Day",
+  '2026-08-10': "National Day (observed)",
+  '2026-11-08': "Deepavali",
+  '2026-11-09': "Deepavali (observed)",
+  '2026-12-25': "Christmas Day"
+};
+const SCHOOL_HOLIDAY_RANGES = [
+  { start:'2026-03-14', end:'2026-03-22', name:"March School Holidays" },
+  { start:'2026-05-30', end:'2026-06-28', name:"June School Holidays" },
+  { start:'2026-09-05', end:'2026-09-13', name:"September School Holidays" },
+  { start:'2026-11-21', end:'2026-12-31', name:"Year-End School Holidays" }
+];
+const SCHOOL_HOLIDAY_SINGLE_DAYS = {
+  '2026-03-23': "Day-in-lieu (Hari Raya Puasa)",
+  '2026-07-06': "Youth Day (observed)",
+  '2026-09-04': "Teachers' Day",
+  '2026-10-02': "Children's Day"
+};
+
+function getPublicHoliday(key){
+  return PUBLIC_HOLIDAYS[key] || null;
+}
+function getSchoolHoliday(key){
+  if(SCHOOL_HOLIDAY_SINGLE_DAYS[key]) return SCHOOL_HOLIDAY_SINGLE_DAYS[key];
+  for(const r of SCHOOL_HOLIDAY_RANGES){
+    if(key >= r.start && key <= r.end) return r.name;
+  }
+  return null;
+}
 let current = new Date();
 let selectedDateKey = null;
 let selectedColor = COLORS[0];
@@ -533,11 +609,21 @@ function renderCalendar(){
     const key = dateKey(d);
     const isToday = isSameDay(d,today);
     const dayEvents = (data.events[key]||[]).slice().sort((a,b)=>sortKey(a).localeCompare(sortKey(b)));
+    const phName = getPublicHoliday(key);
+    const schName = getSchoolHoliday(key);
 
     // Grid cell (desktop/tablet view)
     const cell = document.createElement('div');
-    cell.className = 'day' + (d.getMonth()!==m ? ' other-month':'') + (isToday ? ' today':'');
-    cell.innerHTML = `<div class="day-num">${d.getDate()}</div><div class="events"></div>`;
+    cell.className = 'day'
+      + (d.getMonth()!==m ? ' other-month':'')
+      + (isToday ? ' today':'')
+      + (phName ? ' public-holiday':'')
+      + (schName ? ' school-holiday':'');
+    let cellHtml = `<div class="day-num">${d.getDate()}</div>`;
+    if(phName) cellHtml += `<div class="holiday-label ph" title="${escapeHtml(phName)}">${escapeHtml(phName)}</div>`;
+    if(schName) cellHtml += `<div class="holiday-label sch" title="${escapeHtml(schName)}">${escapeHtml(schName)}</div>`;
+    cellHtml += `<div class="events"></div>`;
+    cell.innerHTML = cellHtml;
     cell.onclick = ()=> openDayModal(key, d);
 
     const evWrap = cell.querySelector('.events');
@@ -561,12 +647,27 @@ function renderCalendar(){
     // Row (mobile agenda view) — only current month's days
     if(d.getMonth()===m){
       const row = document.createElement('div');
-      row.className = 'day-row' + (isToday ? ' today':'');
+      row.className = 'day-row'
+        + (isToday ? ' today':'')
+        + (phName ? ' public-holiday':'')
+        + (schName ? ' school-holiday':'');
       row.onclick = ()=> openDayModal(key, d);
       const dow = d.toLocaleDateString('en-US',{weekday:'short'});
       row.innerHTML = `<div class="day-row-date"><div class="dow">${dow}</div><div class="num">${d.getDate()}</div></div>
         <div class="day-row-events"></div>`;
       const rowEvWrap = row.querySelector('.day-row-events');
+      if(phName){
+        const lbl = document.createElement('div');
+        lbl.className = 'holiday-label ph';
+        lbl.textContent = phName;
+        rowEvWrap.appendChild(lbl);
+      }
+      if(schName){
+        const lbl = document.createElement('div');
+        lbl.className = 'holiday-label sch';
+        lbl.textContent = schName;
+        rowEvWrap.appendChild(lbl);
+      }
       if(dayEvents.length){
         dayEvents.forEach(ev=>{
           const member = data.members.find(mm=>mm.id===ev.memberId);
