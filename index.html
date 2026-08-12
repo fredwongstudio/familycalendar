@@ -249,8 +249,17 @@
     font-family:'Figtree', sans-serif; font-size:0.92rem; background:#fff; color:var(--ink);
   }
   .field textarea{ resize:vertical; min-height:50px; }
-  .time-select-row{ display:flex; gap:8px; }
+  .time-select-row{ display:flex; gap:8px; transition:opacity .12s ease; }
   .time-select-row select{ flex:1; min-width:0; }
+  .time-select-row.disabled{ opacity:0.4; pointer-events:none; }
+  .allday-toggle{
+    display:flex; align-items:center; gap:7px;
+    font-size:0.85rem; font-weight:600; color:var(--ink);
+    margin-bottom:8px; cursor:pointer; text-transform:none; letter-spacing:normal;
+  }
+  .allday-toggle input[type=checkbox]{
+    width:17px; height:17px; accent-color:var(--ink); cursor:pointer; margin:0;
+  }
   .swatches{ display:flex; gap:8px; flex-wrap:wrap; }
   .swatch{ width:26px; height:26px; border-radius:50%; cursor:pointer; border:2px solid transparent; }
   .swatch.selected{ border-color:var(--ink); }
@@ -333,7 +342,11 @@
     </div>
     <div class="field">
       <label>Time (optional)</label>
-      <div class="time-select-row">
+      <label class="allday-toggle">
+        <input type="checkbox" id="evAllDay">
+        <span>All day</span>
+      </label>
+      <div class="time-select-row" id="timeSelectRow">
         <select id="evHour" aria-label="Hour">
           <option value="">--</option>
           <option value="1">1</option><option value="2">2</option><option value="3">3</option>
@@ -519,7 +532,7 @@ function renderCalendar(){
     d.setDate(gridStart.getDate()+i);
     const key = dateKey(d);
     const isToday = isSameDay(d,today);
-    const dayEvents = (data.events[key]||[]).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+    const dayEvents = (data.events[key]||[]).slice().sort((a,b)=>sortKey(a).localeCompare(sortKey(b)));
 
     // Grid cell (desktop/tablet view)
     const cell = document.createElement('div');
@@ -534,7 +547,7 @@ function renderCalendar(){
       const pill = document.createElement('div');
       pill.className = 'event-pill';
       pill.style.background = member ? member.color : '#8a8a8a';
-      pill.textContent = (ev.time ? formatTime12(ev.time)+' ' : '') + ev.title;
+      pill.textContent = ev.allDay ? ('All day – ' + ev.title) : ((ev.time ? formatTime12(ev.time)+' ' : '') + ev.title);
       evWrap.appendChild(pill);
     });
     if(dayEvents.length>3){
@@ -560,7 +573,7 @@ function renderCalendar(){
           const pill = document.createElement('div');
           pill.className = 'event-pill';
           pill.style.background = member ? member.color : '#8a8a8a';
-          pill.textContent = (ev.time ? formatTime12(ev.time)+' ' : '') + ev.title;
+          pill.textContent = ev.allDay ? ('All day – ' + ev.title) : ((ev.time ? formatTime12(ev.time)+' ' : '') + ev.title);
           rowEvWrap.appendChild(pill);
         });
       } else {
@@ -589,6 +602,10 @@ function formatTime12(time24){
   return `${h}:${mStr} ${ampm}`;
 }
 
+function sortKey(ev){
+  return ev.allDay ? '' : (ev.time || '99:99');
+}
+
 // Day modal
 function openDayModal(key, dateObj){
   selectedDateKey = key;
@@ -602,6 +619,8 @@ function openDayModal(key, dateObj){
 
   renderExistingEvents();
   document.getElementById('evTitle').value='';
+  document.getElementById('evAllDay').checked=false;
+  document.getElementById('timeSelectRow').classList.remove('disabled');
   document.getElementById('evHour').value='';
   document.getElementById('evMinute').value='00';
   document.getElementById('evAmPm').value='AM';
@@ -612,7 +631,7 @@ function openDayModal(key, dateObj){
 function renderExistingEvents(){
   const list = document.getElementById('existingList');
   const empty = document.getElementById('emptyNote');
-  const events = (data.events[selectedDateKey]||[]).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+  const events = (data.events[selectedDateKey]||[]).slice().sort((a,b)=>sortKey(a).localeCompare(sortKey(b)));
   list.innerHTML='';
   empty.style.display = events.length ? 'none':'block';
   events.forEach(ev=>{
@@ -621,7 +640,7 @@ function renderExistingEvents(){
     row.className='existing-item';
     row.innerHTML = `<span class="who" style="background:${member?member.color:'#999'}"></span>
       <div class="info">
-        <div class="t">${ev.time? escapeHtml(formatTime12(ev.time))+' — ':''}${escapeHtml(ev.title)}</div>
+        <div class="t">${ev.allDay ? 'All day — ' : (ev.time? escapeHtml(formatTime12(ev.time))+' — ':'')}${escapeHtml(ev.title)}</div>
         <div class="m">${member?escapeHtml(member.name):'Unassigned'}${ev.notes? ' · '+escapeHtml(ev.notes):''}</div>
       </div>
       <span class="del" data-id="${ev.id}">Remove</span>`;
@@ -641,29 +660,38 @@ function renderExistingEvents(){
 document.getElementById('addEventBtn').onclick = async ()=>{
   const title = document.getElementById('evTitle').value.trim();
   if(!title){ alert('Give the activity a name.'); return; }
-  const hour12 = document.getElementById('evHour').value;
-  const minute = document.getElementById('evMinute').value;
-  const ampm = document.getElementById('evAmPm').value;
+  const allDay = document.getElementById('evAllDay').checked;
   let time = '';
-  if(hour12){
-    let h = parseInt(hour12,10) % 12;
-    if(ampm==='PM') h += 12;
-    time = String(h).padStart(2,'0') + ':' + minute;
+  if(!allDay){
+    const hour12 = document.getElementById('evHour').value;
+    const minute = document.getElementById('evMinute').value;
+    const ampm = document.getElementById('evAmPm').value;
+    if(hour12){
+      let h = parseInt(hour12,10) % 12;
+      if(ampm==='PM') h += 12;
+      time = String(h).padStart(2,'0') + ':' + minute;
+    }
   }
   const memberId = document.getElementById('evMember').value;
   const notes = document.getElementById('evNotes').value.trim();
 
   if(!data.events[selectedDateKey]) data.events[selectedDateKey]=[];
-  data.events[selectedDateKey].push({ id: uid(), title, time, memberId, notes });
+  data.events[selectedDateKey].push({ id: uid(), title, time, allDay, memberId, notes });
   try{ await persist(); } catch(e){}
 
   document.getElementById('evTitle').value='';
+  document.getElementById('evAllDay').checked=false;
+  document.getElementById('timeSelectRow').classList.remove('disabled');
   document.getElementById('evHour').value='';
   document.getElementById('evMinute').value='00';
   document.getElementById('evAmPm').value='AM';
   document.getElementById('evNotes').value='';
   renderExistingEvents();
   renderCalendar();
+};
+
+document.getElementById('evAllDay').onchange = (e)=>{
+  document.getElementById('timeSelectRow').classList.toggle('disabled', e.target.checked);
 };
 
 document.getElementById('closeDayModal').onclick = ()=>{
