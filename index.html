@@ -139,6 +139,7 @@
     color:var(--ink-soft); text-transform:uppercase;
     font-family:'JetBrains Mono', monospace;
     white-space:nowrap; overflow:hidden;
+    min-width:0;
   }
   .weekdays .short{ display:none; }
   .grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:clamp(3px,1vw,6px); }
@@ -147,6 +148,7 @@
     border:1px solid var(--line);
     border-radius:10px;
     min-height:clamp(56px,13vw,96px);
+    min-width:0;
     padding:clamp(3px,1vw,6px) clamp(3px,1vw,6px) clamp(4px,1vw,8px);
     position:relative;
     cursor:pointer;
